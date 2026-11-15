@@ -1,0 +1,30 @@
+# Railway / Nixpacks build configuration
+# Sharp requires libvips native binaries for image processing (face crop)
+# Puppeteer requires Chromium dependencies (PDF generation)
+# Tor is required for Dark Web Intelligence pipeline (.onion access)
+
+[phases.setup]
+nixPkgs = [
+  "vips",
+  "pkg-config",
+  "nodejs_20",
+  "yarn",
+  "tor"
+]
+
+# Ensure native dependencies are available at build time
+aptPkgs = [
+  "libvips-dev",
+  "libjpeg-dev",
+  "libpng-dev",
+  "libwebp-dev",
+  "libgif-dev",
+  "libtiff-dev",
+  "build-essential"
+]
+
+[phases.build]
+cmds = ["yarn install", "yarn build"]
+
+[start]
+cmd = "bash scripts/start-with-tor.sh"

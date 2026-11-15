@@ -1,0 +1,350 @@
+Te voy a dejar una guía inicial tipo backlog técnico: estructura, módulos, endpoints, modelos y código base para arrancar el microservicio separado sin congestionar tu API principal.
+
+Pensado durante unos segundos
+
+Sí. Esta sería la guía para comenzar OSINT Social Scraper.
+
+1. Crear proyecto
+nest new osint-ia-cam-social-scraper
+cd osint-ia-cam-social-scraper
+
+Instalar dependencias:
+
+yarn add puppeteer cheerio axios mongoose @nestjs/mongoose @nestjs/config class-validator class-transformer uuid helmet
+yarn add -D @types/uuid
+2. Estructura
+src/
+├── app.module.ts
+├── main.ts
+├── search/
+│   ├── search.controller.ts
+│   ├── search.service.ts
+│   ├── dto/
+│   │   ├── search-name.dto.ts
+│   │   └── search-username.dto.ts
+├── platforms/
+│   ├── social-scraper.interface.ts
+│   ├── github/
+│   │   └── github.scraper.ts
+│   ├── reddit/
+│   │   └── reddit.scraper.ts
+│   └── pinterest/
+│       └── pinterest.scraper.ts
+├── browser/
+│   └── browser.service.ts
+├── normalizer/
+│   └── normalizer.service.ts
+├── schemas/
+│   └── social-profile.schema.ts
+└── common/
+    └── types.ts
+3. Tipos base
+// src/common/types.ts
+
+export type SocialPlatform =
+  | 'github'
+  | 'reddit'
+  | 'pinterest'
+  | 'facebook'
+  | 'instagram'
+  | 'tiktok'
+  | 'twitter'
+  | 'medium';
+
+export type SocialProfile = {
+  platform: SocialPlatform;
+  name?: string;
+  username?: string;
+  profileUrl: string;
+  avatarUrl?: string;
+  bio?: string;
+  images?: string[];
+  followers?: number;
+  confidence: number;
+  capturedAt: Date;
+};
+4. Interface para todos los scrapers
+// src/platforms/social-scraper.interface.ts
+
+import { SocialPlatform, SocialProfile } from '../common/types';
+
+export interface SocialScraper {
+  platform: SocialPlatform;
+
+  searchByName(query: string, limit?: number): Promise<SocialProfile[]>;
+
+  searchByUsername(username: string): Promise<SocialProfile[]>;
+}
+5. Browser Service
+// src/browser/browser.service.ts
+
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import puppeteer, { Browser } from 'puppeteer';
+
+@Injectable()
+export class BrowserService implements OnModuleDestroy {
+  private browser?: Browser;
+
+  async getBrowser(): Promise<Browser> {
+    if (!this.browser) {
+      this.browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+      });
+    }
+
+    return this.browser;
+  }
+
+  async newPage() {
+    const browser = await this.getBrowser();
+    const page = await browser.newPage();
+
+    await page.setViewport({
+      width: 1366,
+      height: 768,
+    });
+
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+    );
+
+    return page;
+  }
+
+  async onModuleDestroy() {
+    if (this.browser) {
+      await this.browser.close();
+    }
+  }
+}
+6. Scraper GitHub inicial
+// src/platforms/github/github.scraper.ts
+
+import { Injectable } from '@nestjs/common';
+import { SocialScraper } from '../social-scraper.interface';
+import { SocialProfile } from '../../common/types';
+import axios from 'axios';
+
+@Injectable()
+export class GithubScraper implements SocialScraper {
+  platform = 'github' as const;
+
+  async searchByUsername(username: string): Promise<SocialProfile[]> {
+    try {
+      const url = `https://api.github.com/users/${username}`;
+      const { data } = await axios.get(url);
+
+      return [
+        {
+          platform: 'github',
+          name: data.name,
+          username: data.login,
+          profileUrl: data.html_url,
+          avatarUrl: data.avatar_url,
+          bio: data.bio,
+          followers: data.followers,
+          confidence: 0.95,
+          capturedAt: new Date(),
+        },
+      ];
+    } catch {
+      return [];
+    }
+  }
+
+  async searchByName(query: string, limit = 10): Promise<SocialProfile[]> {
+    const url = `https://api.github.com/search/users?q=${encodeURIComponent(query)}&per_page=${limit}`;
+
+    const { data } = await axios.get(url);
+
+    return data.items.map((item) => ({
+      platform: 'github',
+      username: item.login,
+      profileUrl: item.html_url,
+      avatarUrl: item.avatar_url,
+      confidence: 0.75,
+      capturedAt: new Date(),
+    }));
+  }
+}
+7. DTOs
+// src/search/dto/search-name.dto.ts
+
+import { IsArray, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { SocialPlatform } from '../../common/types';
+
+export class SearchNameDto {
+  @IsString()
+  query: string;
+
+  @IsOptional()
+  @IsArray()
+  platforms?: SocialPlatform[];
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  limit?: number;
+}
+// src/search/dto/search-username.dto.ts
+
+import { IsArray, IsOptional, IsString } from 'class-validator';
+import { SocialPlatform } from '../../common/types';
+
+export class SearchUsernameDto {
+  @IsString()
+  username: string;
+
+  @IsOptional()
+  @IsArray()
+  platforms?: SocialPlatform[];
+}
+8. Search Service
+// src/search/search.service.ts
+
+import { Injectable } from '@nestjs/common';
+import { GithubScraper } from '../platforms/github/github.scraper';
+import { SearchNameDto } from './dto/search-name.dto';
+import { SearchUsernameDto } from './dto/search-username.dto';
+import { SocialScraper } from '../platforms/social-scraper.interface';
+
+@Injectable()
+export class SearchService {
+  private scrapers: SocialScraper[];
+
+  constructor(private readonly githubScraper: GithubScraper) {
+    this.scrapers = [githubScraper];
+  }
+
+  async searchByName(dto: SearchNameDto) {
+    const platforms = dto.platforms ?? this.scrapers.map((s) => s.platform);
+
+    const activeScrapers = this.scrapers.filter((scraper) =>
+      platforms.includes(scraper.platform),
+    );
+
+    const results = await Promise.allSettled(
+      activeScrapers.map((scraper) =>
+        scraper.searchByName(dto.query, dto.limit ?? 10),
+      ),
+    );
+
+    return results.flatMap((result) =>
+      result.status === 'fulfilled' ? result.value : [],
+    );
+  }
+
+  async searchByUsername(dto: SearchUsernameDto) {
+    const platforms = dto.platforms ?? this.scrapers.map((s) => s.platform);
+
+    const activeScrapers = this.scrapers.filter((scraper) =>
+      platforms.includes(scraper.platform),
+    );
+
+    const results = await Promise.allSettled(
+      activeScrapers.map((scraper) => scraper.searchByUsername(dto.username)),
+    );
+
+    return results.flatMap((result) =>
+      result.status === 'fulfilled' ? result.value : [],
+    );
+  }
+}
+9. Controller
+// src/search/search.controller.ts
+
+import { Body, Controller, Post } from '@nestjs/common';
+import { SearchService } from './search.service';
+import { SearchNameDto } from './dto/search-name.dto';
+import { SearchUsernameDto } from './dto/search-username.dto';
+
+@Controller('api/v1/search')
+export class SearchController {
+  constructor(private readonly searchService: SearchService) {}
+
+  @Post('name')
+  searchByName(@Body() dto: SearchNameDto) {
+    return this.searchService.searchByName(dto);
+  }
+
+  @Post('username')
+  searchByUsername(@Body() dto: SearchUsernameDto) {
+    return this.searchService.searchByUsername(dto);
+  }
+}
+10. Module
+// src/app.module.ts
+
+import { Module } from '@nestjs/common';
+import { SearchController } from './search/search.controller';
+import { SearchService } from './search/search.service';
+import { GithubScraper } from './platforms/github/github.scraper';
+import { BrowserService } from './browser/browser.service';
+
+@Module({
+  imports: [],
+  controllers: [SearchController],
+  providers: [SearchService, GithubScraper, BrowserService],
+})
+export class AppModule {}
+11. main.ts
+// src/main.ts
+
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.use(helmet());
+  app.enableCors();
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
+
+  await app.listen(process.env.PORT ?? 3001);
+}
+
+bootstrap();
+12. Probar
+yarn start:dev
+
+Buscar por username:
+
+curl -X POST http://localhost:3001/api/v1/search/username \
+  -H "Content-Type: application/json" \
+  -d '{"username":"torvalds","platforms":["github"]}'
+
+Buscar por nombre:
+
+curl -X POST http://localhost:3001/api/v1/search/name \
+  -H "Content-Type: application/json" \
+  -d '{"query":"linus torvalds","platforms":["github"],"limit":5}'
+Orden de tareas
+1. Crear micro NestJS
+2. Crear estructura base
+3. Crear interface SocialScraper
+4. Crear GithubScraper
+5. Crear endpoints search/name y search/username
+6. Probar local
+7. Agregar MongoDB
+8. Agregar Cloudinary para imágenes/evidencias
+9. Agregar RedditScraper
+10. Agregar PinterestScraper
+11. Agregar Puppeteer para plataformas sin API
+12. Agregar Redis/BullMQ para jobs
+13. Conectar con dashboard IA-Cam
+
+Primero arrancaría con GitHub + Reddit + Pinterest. Después pasamos a Facebook, Instagram y TikTok, que son más pesados.

@@ -1,0 +1,8 @@
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+numpy>=2.2,<2.5
+pillow==12.3.0
+opencv-python>=4.11,<5
+ultralytics==8.4.176
+httpx>=0.28,<1

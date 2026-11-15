@@ -1,0 +1,314 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 240 6% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 6% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 216 100% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 7%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 5% 9%;
+    --muted-foreground: 220 8% 62%;
+    --accent: 160 85% 50%;
+    --accent-foreground: 0 0% 3%;
+    --destructive: 354 84% 64%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 5% 18%;
+    --input: 240 5% 18%;
+    --ring: 216 100% 58%;
+    --radius: 1.25rem;
+    --chart-1: 216 100% 58%;
+    --chart-2: 160 85% 50%;
+    --chart-3: 258 89% 74%;
+    --chart-4: 20 100% 55%;
+    --chart-5: 354 84% 64%;
+    --admin-scrollbar-size: 10px;
+    --admin-scrollbar-thumb: rgba(82, 82, 91, 0.78);
+    --admin-scrollbar-thumb-hover: rgba(161, 161, 170, 0.92);
+    --admin-scrollbar-track: rgba(9, 9, 11, 0.45);
+    --admin-scrollbar-border: 3px;
+  }
+
+  * {
+    @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: var(--admin-scrollbar-thumb) transparent;
+  }
+
+  body {
+    @apply min-h-screen bg-background text-foreground antialiased;
+    background: #000;
+    line-height: 1.5;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *::-webkit-scrollbar {
+    width: var(--admin-scrollbar-size);
+    height: var(--admin-scrollbar-size);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    min-height: 48px;
+    border: var(--admin-scrollbar-border) solid transparent;
+    border-radius: 9999px;
+    background-color: var(--admin-scrollbar-thumb);
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--admin-scrollbar-thumb-hover);
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--admin-scrollbar-track);
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply border border-border bg-card shadow-none;
+  }
+
+  .bento-card {
+    @apply glass-panel min-w-0 rounded-[1.2rem] p-4 md:p-5;
+    container-type: inline-size;
+    container-name: panel;
+  }
+
+  .control-input {
+    @apply h-11 min-w-0 max-w-full w-full rounded-xl border border-input bg-black px-3 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/10 md:h-10 md:text-sm;
+  }
+
+  .control-textarea {
+    @apply min-h-20 min-w-0 max-w-full w-full rounded-xl border border-input bg-black px-3 py-2.5 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/10 md:text-sm;
+  }
+
+  .metric-label {
+    @apply text-xs font-semibold tracking-normal text-muted-foreground;
+  }
+
+  .status-dot {
+    @apply h-2.5 w-2.5 rounded-full bg-muted-foreground;
+  }
+
+  .admin-page-title {
+    @apply text-xl font-black leading-tight tracking-tight md:text-2xl;
+  }
+
+  .admin-page-subtitle {
+    @apply mt-0.5 max-w-xl text-sm leading-snug text-muted-foreground md:text-base;
+  }
+
+  .admin-brand-title {
+    @apply text-xl font-black leading-none tracking-tight;
+  }
+
+  .admin-brand-subtitle {
+    @apply mt-1 text-sm font-bold text-muted-foreground;
+  }
+
+  .admin-section-title {
+    @apply text-lg font-black leading-tight md:text-xl;
+  }
+
+  .admin-card-title {
+    @apply text-base font-black text-foreground md:text-lg;
+  }
+}
+
+/* Allow nested grid items and native form controls to shrink with their panel. */
+.dashboard-content .grid > *,
+.dashboard-content form,
+.dashboard-content label {
+  min-width: 0;
+}
+
+.dashboard-content :where(p, h2, h3, a) {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-hero-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard-hero-metrics {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+
+.face-tools-grid,
+.face-comparison-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.responsive-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .5rem;
+}
+
+.evidence-filter-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+
+/* Use the available panel width, including split windows and result columns. */
+.person-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.person-search-intro { grid-area: 1 / 1; }
+.person-search-query { grid-area: 2 / 1; }
+.person-search-photo { grid-area: 3 / 1; }
+.person-search-options { grid-area: 4 / 1; }
+.person-search-error,
+.person-search-submit { grid-column: 1; }
+.person-search-fields { grid-template-columns: minmax(0, 1fr); }
+
+@container panel (min-width: 520px) {
+  .person-search-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .person-search-notes { grid-column: 1 / -1; }
+}
+
+@container panel (min-width: 480px) {
+  .person-search-form {
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 1rem;
+  }
+  .person-search-intro { grid-area: 1 / 1 / auto / -1; }
+  .person-search-query { grid-area: 2 / 1; }
+  .person-search-submit { grid-area: 2 / 2; height: 3.5rem; }
+  .person-search-photo { grid-area: 3 / 1; }
+  .person-search-options { grid-area: 3 / 2; align-self: stretch; }
+  .person-search-options > summary {
+    min-height: 100%;
+  }
+  .person-search-options[open] {
+    grid-area: 4 / 1 / auto / -1;
+  }
+  .person-search-options[open] > summary { min-height: 3rem; }
+  .person-search-form:has(.person-search-options[open]) .person-search-photo {
+    grid-column: 1 / -1;
+  }
+  .person-search-error { grid-column: 1 / -1; }
+}
+
+@container panel (min-width: 640px) {
+  .person-search-form { grid-template-columns: minmax(0, 1fr) 220px; }
+}
+
+@container panel (min-width: 900px) {
+  .person-search-form { grid-template-columns: minmax(0, 1fr) 260px; }
+  .person-search-option-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Keep the search controls reachable when the window is wide and short. */
+@media (min-width: 560px) and (max-height: 600px) {
+  .person-search-card { padding: .75rem; }
+  .person-search-form { gap: .75rem; }
+  .person-search-query input,
+  .person-search-submit { height: 3rem; }
+  .person-search-topbar > div {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .person-search-topbar .admin-page-subtitle { display: none; }
+  .person-search-topbar button > span.hidden { display: none; }
+  .person-search-topbar [role="region"] { left: auto; right: 0; }
+}
+
+@container panel (min-width: 480px) {
+  .evidence-filter-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container panel (min-width: 760px) {
+  .evidence-filter-options {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@container panel (min-width: 560px) {
+  .responsive-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container panel (min-width: 960px) {
+  .responsive-filter-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container panel (min-width: 640px) {
+  .face-tools-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .face-comparison-card {
+    grid-column: 1 / -1;
+  }
+  .face-comparison-inputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container panel (min-width: 800px) {
+  .dashboard-hero-layout {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .dashboard-hero-metrics {
+    flex: 0 0 260px;
+  }
+}
+
+@container panel (min-width: 1040px) {
+  .face-tools-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .face-comparison-card {
+    grid-column: auto;
+  }
+  .face-comparison-inputs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .face-tool-copy {
+    min-height: 4.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-shell *, .dashboard-shell *::before, .dashboard-shell *::after {
+    scroll-behavior: auto;
+    transition-duration: .01ms;
+    animation-duration: .01ms;
+  }
+}

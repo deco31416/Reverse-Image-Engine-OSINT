@@ -1,0 +1,34 @@
+export type DashboardView = "overview" | "search" | "faces" | "face-lab" | "social" | "darkweb" | "evidence" | "network" | "settings";
+
+export type DashboardData = {
+  apiStatus?: string;
+  health?: any;
+  audit?: any;
+  diagnostics?: any;
+  searches?: any;
+  stats?: any;
+  lastSearch?: any;
+  faceResult?: any;
+  faceJob?: any;
+  faceSelection?: any;
+  identityMemory?: any;
+  selectedFace?: any;
+  faceToolResult?: any;
+  socialResult?: any;
+  socialHealth?: any;
+  darkwebResult?: any;
+  darkwebHealth?: any;
+  caseSummary?: any;
+  evidence?: any;
+  archivedEvidence?: any;
+  timeline?: any;
+  visualSummary?: any;
+  network?: any;
+  profileResult?: any;
+  datasec?: any;
+  datasecPersonDetail?: any;
+  socialAssets?: any;
+  session?: any;
+  authUsers?: any;
+  errors: { scope: string; message: string }[];
+};
